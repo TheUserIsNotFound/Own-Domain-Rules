@@ -36,7 +36,7 @@ def main() -> None:
   with urllib.request.urlopen(req, timeout=30) as resp:
     data = json.loads(resp.read().decode("utf-8"))
 
-  domains: list[str] = []
+  rules: list[str] = []
   seen: set[str] = set()
 
   for rule in data.get("rules", []):
@@ -60,20 +60,20 @@ def main() -> None:
           continue
         if domain not in seen:
           seen.add(domain)
-          domains.append(domain)
+          rules.append(f"||{domain}^")
 
   # Защита от перезаписи пустым файлом при сбое источника
-  if len(domains) < 50:
+  if len(rules) < 50:
     raise RuntimeError(
         "Проверка не пройдена: получено слишком мало доменов"
-        f" ({len(domains)}). Обновление отменено."
+        f" ({len(rules)}). Обновление отменено."
     )
 
   os.makedirs(os.path.dirname(OUTPUT_FILE), exist_ok=True)
   with open(OUTPUT_FILE, "w", encoding="utf-8", newline="\n") as f:
-    f.write("\n".join(domains) + "\n")
+    f.write("\n".join(rules) + "\n")
 
-  print(f"Успешно обновлено: {len(domains)} доменов в {OUTPUT_FILE}")
+  print(f"Успешно обновлено: {len(rules)} правил в {OUTPUT_FILE}")
 
 
 if __name__ == "__main__":
