@@ -1,4 +1,4 @@
-name: Update Podkop Rulesets
+name: Update Domain Rulesets
 
 on:
   schedule:
@@ -7,6 +7,7 @@ on:
   push:
     paths:
       - 'scripts/update_geoblock.py'
+      - 'scripts/update_ip_geo_detect.py'
       - '.github/workflows/update-rulesets.yml'
 
 permissions:
@@ -24,12 +25,15 @@ jobs:
         with:
           python-version: '3.12'
 
-      - name: Fetch, validate and filter geoblock list
+      - name: Update Podkop geoblock list
         run: python3 scripts/update_geoblock.py
+
+      - name: Update AdGuard Home IP-Geo-Detect list
+        run: python3 scripts/update_ip_geo_detect.py
 
       - name: Commit and push changes
         run: |
           git config user.name "github-actions[bot]"
           git config user.email "github-actions[bot]@users.noreply.github.com"
-          git add Podkop/GeoBlock-own.lst
-          git diff --staged --quiet || (git commit -m "Update Podkop/GeoBlock-own.lst" && git push)
+          git add Podkop/GeoBlock-own.lst Adguard-Home/IP-Geo-Detect.txt
+          git diff --staged --quiet || (git commit -m "Update domain rulesets" && git push)
