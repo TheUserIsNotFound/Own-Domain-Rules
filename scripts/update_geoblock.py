@@ -34,12 +34,16 @@ def main() -> None:
   with urllib.request.urlopen(req, timeout=30) as resp:
     raw_text = resp.read().decode("utf-8")
 
-  cleaned_domains: list[str] = []
+  output_lines: list[str] = []
   seen: set[str] = set()
 
   for raw_line in raw_text.splitlines():
     line = raw_line.split("#")[0].split("//")[0].strip().lower()
+
+    # Сохраняем пустую строку между группами доменов, но не допускаем двойных отступов
     if not line:
+      if output_lines and output_lines[-1] != "":
+        output_lines.append("")
       continue
 
     for prefix in ("+.", "domain:", "full:"):
@@ -53,19 +57,23 @@ def main() -> None:
       continue
     if domain not in seen:
       seen.add(domain)
-      cleaned_domains.append(domain)
+      output_lines.append(domain)
+
+  # Убираем пустую строку в самом конце файла, если последний блок был исключён
+  while output_lines and output_lines[-1] == "":
+    output_lines.pop()
 
   # Защита от перезаписи списка пустым ответом или HTML-ошибкой при сбое источника
-  if len(cleaned_domains) < 100:
+  if len(seen) < 100:
     raise RuntimeError(
         "Проверка не пройдена: получено слишком мало доменов"
-        f" ({len(cleaned_domains)}). Обновление отменено."
+        f" ({len(seen)}). Обновление отменено."
     )
 
   with open(OUTPUT_FILE, "w", encoding="utf-8", newline="\n") as f:
-    f.write("\n".join(cleaned_domains) + "\n")
+    f.write("\n".join(output_lines) + "\n")
 
-  print(f"Успешно обновлено: {len(cleaned_domains)} доменов в {OUTPUT_FILE}")
+  print(f"Успешно обновлено: {len(seen)} доменов в {OUTPUT_FILE}")
 
 
 if __name__ == "__main__":
